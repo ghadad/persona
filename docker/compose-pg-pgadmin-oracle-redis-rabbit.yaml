@@ -1,0 +1,90 @@
+version: "3"
+
+services:
+  oracle:
+    image: gvenzl/oracle-xe:18.4.0
+    ports:
+      - 1521:1521
+    environment:
+      - ORACLE_ALLOW_REMOTE=true
+      - ORACLE_PASSWORD=password
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+
+  postgres:
+    image: postgres:12
+    hostname: postgres
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust 
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=ghadad@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    depends_on:
+      - postgres
+    links:
+      - postgres    
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  # web:
+  #   image: my-web-app
+  #   build:
+  #     dockerfile: server/Dockerfile
+  #   ports:
+  #     - 3000:3000
+  #   depends_on:
+  #     - oracle
+  #     - postgres
+  #     - redis
+
+  # producer1:
+  #   image: my-web-app
+  #   command: node build/index.js producer
+  #   deploy:
+  #     replicas: 3
+
+  # consumer1:
+  #   image: my-web-app
+  #   command: node build/index.js consumer
+  #   deploy:
+  #     replicas: 3
+
+volumes:
+  oracle-data:
+  postgres-data:
+
+networks:
+  default:
+    driver: bridge
